@@ -3,15 +3,17 @@
 
 
 
+
+
 extern "C"{
     void digit_kernel(ap_uint<8>    *input,
                       ap_uint<32> *output
                       //int total
                     )
     {
-        #pragma HLS INTERFACE m_axi port=input bundle=gmem //max_read_burst_length=64
+        #pragma HLS INTERFACE m_axi port=input bundle=gmem max_read_burst_length=256
 
-        #pragma HLS INTERFACE m_axi port=output bundle=gmem1
+        #pragma HLS INTERFACE m_axi port=output bundle=gmem1 max_write_burst_length=256
 
 
         //+1 for line delimiter
