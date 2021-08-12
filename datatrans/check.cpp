@@ -29,12 +29,13 @@ int get_krnl_version(int *argc, char **argv)
 	std::cerr << "Grab kernel version number" << std::endl;
 	std::cerr << "arg_idx = " << arg_idx << std::endl;
 	std::cerr << "argv[" << arg_idx << "] = " << argv[arg_idx] << std::endl;
-	if (arg_idx > 0)
-	{
-		int ret = std::sscanf(argv[arg_idx], "v%d", &v_num);
+	// if (arg_idx > 0)
+	// {
+		int ret = std::sscanf(argv[arg_idx], "%d", &v_num);
+		std::cerr << "Using version " << v_num << std::endl;
 		if (ret == 1)
 			++shift;
-	}
+	// }
 	std::cerr << "Using version " << v_num << std::endl;
 
 	*argc -= shift;
