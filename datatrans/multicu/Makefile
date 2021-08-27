@@ -1,8 +1,8 @@
 CXX=g++
 CXXFLGAS := -std=c++11
 
-HOST_SRC = digit_host.cpp check.cpp trans_opencl.cpp
-HOST_EXE = host
+HOST_SRC = multicu_host.cpp ../check.cpp trans_opencl.cpp CUManagement.cpp
+HOST_EXE = multicu_host
 
 INC_DIR = ${XILINX_XRT}/include/
 INC_FLGAS = -I$(INC_DIR)
@@ -12,20 +12,23 @@ LIBS = -lOpenCL -lpthread -lrt -lstdc++
 LDFLAGS = -L$(LIB_DIR) $(LIBS)
 
 HWC ?= v++ -O3
-HW_TARGET ?= sw_emu
+HW_TARGET ?= hw
 KERNEL_NAME ?= digit_kernel
-KERNEL_SRC ?= kernel_apint.cpp
+KERNEL_SRC ?= stream_kernel_v1.cpp
+#port_widen.cpp
+#kernel_littel_endian_v1.cpp
 
 # Required flags
 DESIGN_CFG ?= design.cfg
-HWCFLAGS := --config $(DESIGN_CFG)
+TCL_FILE ?= runPre.tcl
+HWCFLAGS := --config $(DESIGN_CFG) --hls.pre_tcl $(TCL_FILE)
 HWCFLAGS += -t ${HW_TARGET}
 
 $(info HWCFLAGS=$(HWCFLAGS))
 
 #HW stuff
-XO_FILE ?= kernel_v0.xo
-XCLBIN_FILE ?= kernel_v0.xclbin
+XO_FILE ?= stream_kernel_v1.xo
+XCLBIN_FILE ?= stream_kernel_v1.xclbin
 
 
 default: all
@@ -44,10 +47,11 @@ $(XCLBIN_FILE): $(KERNEL_SRC)
 
 bin: $(XO_FILE) $(XCLBIN_FILE)
     
-clean:
-	rm host *.log *.xclbin *.log *summary
+cleanbin:
+	rm *.xo *.xclbin* *.log
 
-
+cleansum:
+	rm *summary
 
 
 #g++ -std=c++11 \
