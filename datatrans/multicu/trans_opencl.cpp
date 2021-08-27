@@ -29,7 +29,7 @@ void Trans_OpenCL::GetDevices()
 	OCL_CHECK(err, platform.getDevices(CL_DEVICE_TYPE_ALL, &devices));
 }
 
-void Trans_OpenCL::BuildKernel(int version, std::string binary_name,
+void Trans_OpenCL::ReadBinaries(int version, std::string binary_name,
 	cl::Program::Binaries& bins)
 {
 	unsigned int file_buf_size;	
@@ -78,13 +78,18 @@ void Trans_OpenCL::init(int version, const std::string build_tgt,
 
 	cl::Program::Binaries bins;
 
-	BuildKernel(version, binary_name, bins);
+	ReadBinaries(version, binary_name, bins);
 
 	OCL_CHECK(err, cl::Program program(ctx, devices, bins, NULL, &err)); 
 
-	OCL_CHECK(err, cl::Kernel krnl_dynproc(program, kernel_name.c_str(), &err));
+	//OCL_CHECK(err, cl::Kernel krnl_dynproc(program, kernel_name.c_str(), &err));
 
-	mkernel = krnl_dynproc;
+	OCL_CHECK(err, cl::Kernel krnl_0(program, "digit_kernel:{digit_kernel_0}", &err));
+
+	OCL_CHECK(err, cl::Kernel krnl_1(program, "digit_kernel:{digit_kernel_1}", &err));
+
+	mkernel[0] = krnl_0;
+	mkernel[1] = krnl_1;
 
 /*
   TODO:
@@ -102,7 +107,8 @@ Trans_OpenCL::~Trans_OpenCL()
 }
 
 //, int outputSize, char *output, char *tag
-mCU* Trans_OpenCL::createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d, cl::Buffer *tag_d, int total)
+mCU* Trans_OpenCL::createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d, cl::Buffer *tag_d, int total, 
+								char *inputBuffer, char *outputBuffer, char *outTagBuffer)
 {
 	cl_int err;
 	mCU*  req = new mCU(cuID);
@@ -111,19 +117,19 @@ mCU* Trans_OpenCL::createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d,
 
 	//set kernel argument
 	OCL_CHECK(err, err = 
-			mkernel.setArg(0, *input_d)
+			mkernel[cuID].setArg(0, *input_d)
 		);
 
 	OCL_CHECK(err, err = 
-			mkernel.setArg(1, *output_d)
+			mkernel[cuID].setArg(1, *output_d)
 		);
 
 	OCL_CHECK(err, err = 
-			mkernel.setArg(2, *tag_d)
+			mkernel[cuID].setArg(2, *tag_d)
 		);
 
 	OCL_CHECK(err, err = 
-			mkernel.setArg(3, total)
+			mkernel[cuID].setArg(3, total)
 		);
 	//cout << "kernel arguments are set" << endl;
 
@@ -133,10 +139,13 @@ mCU* Trans_OpenCL::createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d,
 			0, NULL, &req->mEvent[0])
 		);
 
-	// OCL_CHECK(err, cmd_q.enqueueWriteBuffer(
-	// 		*input_d, CL_FALSE, //, output_d
-	// 		0, NULL, &req->mEvent[0])
-	// 	);
+
+	size_t inputSize = total * 1059;
+	OCL_CHECK(err, cmd_q.enqueueWriteBuffer(
+										*input_d, CL_FALSE, //, output_d
+										0, inputSize, inputBuffer, 
+										NULL, &req->mEvent[0])
+		);
 
 
 	req->mEvents.push_back(req->mEvent[0]);
@@ -146,7 +155,7 @@ mCU* Trans_OpenCL::createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d,
 	//Enqueue Task (schedule execution)
 	OCL_CHECK(err, 
 				err = cmd_q.enqueueTask(
-					mkernel,
+					mkernel[cuID],
 					&req->mEvents,
 					&req->mEvent[1])
 		);
@@ -170,16 +179,32 @@ mCU* Trans_OpenCL::createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d,
 	// 	);
 	// req->mEvents.push_back(req->mEvent[3]);
 	//clEnqueueMigrateMemObjects(mkernel, 1, *output_d, CL_MIGRATE_MEM_OBJECT_HOST, 1, &req->mEvent[1], &req->mEvent[2]);
-	OCL_CHECK(err, cmd_q.enqueueMigrateMemObjects(
-			{*output_d,  *tag_d}, //, output_d
-			CL_MIGRATE_MEM_OBJECT_HOST, &req->mEvents, &req->mEvent[2])
+	// OCL_CHECK(err, cmd_q.enqueueMigrateMemObjects(
+	// 		{*output_d,  *tag_d}, //, output_d
+	// 		CL_MIGRATE_MEM_OBJECT_HOST, &req->mEvents, &req->mEvent[2])
+	// 	);
+
+	size_t outputSize = 32 * 32 * total / 8;
+	OCL_CHECK(err, cmd_q.enqueueReadBuffer(
+										*output_d, CL_FALSE, //, output_d
+										0, outputSize, outputBuffer, 
+										&req->mEvents, &req->mEvent[2])
 		);
 
 	req->mEvents.push_back(req->mEvent[2]);
 
+	//size_t inputSize = total * 1059;
+	OCL_CHECK(err, cmd_q.enqueueReadBuffer(
+										*tag_d, CL_FALSE, //, output_d
+										0, total, outTagBuffer, 
+										&req->mEvents, &req->mEvent[3])
+		);
+
+	req->mEvents.push_back(req->mEvent[3]);
+
 	//Register call back to notify kernel completion
 
-	req->mEvent[1].setCallback(CL_COMPLETE, &event_cb, &req->mId);
+	//req->mEvent[1].setCallback(CL_COMPLETE, &event_cb, &req->mId);
 	//clSetEventCallback(req->mEvent[1], CL_COMPLETE, event_cb, &req->mId); 
 	return req;
 }

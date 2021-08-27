@@ -199,20 +199,20 @@ int main(int argc, char** argv)
     cu0_ext[0].obj = 0; // pagerank2;
     cu0_ext[0].param = 0;
 	cu0_ext[1].flags = 1|XCL_MEM_TOPOLOGY;
-    cu0_ext[1].obj = outputBuffer0; // pagerank2;|XCL_MEM_EXT_HOST_ONLY
+    cu0_ext[1].obj = 0; // pagerank2;|XCL_MEM_EXT_HOST_ONLY
     cu0_ext[1].param = 0;
 	cu0_ext[2].flags = 4|XCL_MEM_TOPOLOGY;
-    cu0_ext[2].obj = outTagBuffer0; // pagerank2;
+    cu0_ext[2].obj = 0; // pagerank2;
     cu0_ext[2].param = 0;
 
-	cu1_ext[0].flags = XCL_MEM_DDR_BANK2;
-    cu1_ext[0].obj = inputBuffer1; // pagerank2;
+	cu1_ext[0].flags = 2|XCL_MEM_TOPOLOGY;
+    cu1_ext[0].obj = 0; // pagerank2;
     cu1_ext[0].param = 0;
 	cu1_ext[1].flags = 3|XCL_MEM_TOPOLOGY;
-    cu1_ext[1].obj = outputBuffer1; // pagerank2;
+    cu1_ext[1].obj = 0; // pagerank2;
     cu1_ext[1].param = 0;
 	cu1_ext[2].flags = 5|XCL_MEM_TOPOLOGY;
-    cu1_ext[2].obj = outTagBuffer1; // pagerank2;
+    cu1_ext[2].obj = 0; // pagerank2;
     cu1_ext[2].param = 0;
 
 
@@ -231,9 +231,9 @@ int main(int argc, char** argv)
 	OCL_CHECK_NO_CALL(err, "creating input_d0 cl::Buffer");
 
 	input_d1 = cl::Buffer(trancl.ctx,
-			CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY , //CL_MEM_USE_HOST_PTR | | CL_MEM_EXT_PTR_XILINX| CL_MEM_EXT_PTR_XILINX
+			CL_MEM_READ_ONLY | CL_MEM_EXT_PTR_XILINX, //CL_MEM_USE_HOST_PTR | | CL_MEM_EXT_PTR_XILINX| CL_MEM_EXT_PTR_XILINX
 			inputSize * sizeof(char), 
-			inputBuffer1, //NULL
+			&cu1_ext[0], //NULL
 			&err
 		);
 	OCL_CHECK_NO_CALL(err, "creating input_d1 cl::Buffer");
@@ -258,9 +258,9 @@ int main(int argc, char** argv)
 
 
 	output_d0 = cl::Buffer(trancl.ctx,
-			CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+			CL_MEM_READ_WRITE | CL_MEM_EXT_PTR_XILINX, //CL_MEM_USE_HOST_PTR |
 			outputSize  * sizeof(char), 
-			outputBuffer0, //NULL
+			&cu0_ext[1], //NULL
 			&err
 		);
 
@@ -268,9 +268,9 @@ int main(int argc, char** argv)
 
 
 	output_d1 = cl::Buffer(trancl.ctx,
-			CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+			CL_MEM_READ_WRITE | CL_MEM_EXT_PTR_XILINX, //CL_MEM_USE_HOST_PTR
 			outputSize  * sizeof(char), 
-			outputBuffer1 , //NULL
+			&cu1_ext[1] , //NULL
 			&err
 		);
 	OCL_CHECK_NO_CALL(err, "creating output_d1 cl::Buffer");
@@ -296,22 +296,22 @@ int main(int argc, char** argv)
 
 
 	tag_d0 = cl::Buffer(trancl.ctx,
-			CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+			CL_MEM_READ_WRITE | CL_MEM_EXT_PTR_XILINX, //CL_MEM_USE_HOST_PTR | 
 			ndigit  * sizeof(char), 
-			outTagBuffer0, //NULL
+			&cu0_ext[2], //NULL
 			&err
 		);
 
-	OCL_CHECK_NO_CALL(err, "creating output_d0 cl::Buffer");
+	OCL_CHECK_NO_CALL(err, "creating tag_d0 cl::Buffer");
 
 
 	tag_d1 = cl::Buffer(trancl.ctx,
-			CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+			CL_MEM_READ_WRITE | CL_MEM_EXT_PTR_XILINX, //CL_MEM_USE_HOST_PTR | 
 			ndigit  * sizeof(char), 
-			outTagBuffer1, //NULL
+			&cu1_ext[2], //NULL
 			&err
 		);
-	OCL_CHECK_NO_CALL(err, "creating output_d1 cl::Buffer");
+	OCL_CHECK_NO_CALL(err, "creating tag_d1 cl::Buffer");
 
 
 	tag_d2 = cl::Buffer(trancl.ctx,
@@ -386,8 +386,8 @@ int main(int argc, char** argv)
 	// cout << "finish copying results" << endl;
 
 
-	mCU* cu0 = trancl.createCU(0, &input_d0, &output_d0, &tag_d0, ndigit);
-	mCU* cu1 = trancl.createCU(1, &input_d1, &output_d1, &tag_d1, ndigit);
+	mCU* cu0 = trancl.createCU(0, &input_d0, &output_d0, &tag_d0, ndigit, inputBuffer0, outputBuffer0, outTagBuffer0);
+	mCU* cu1 = trancl.createCU(1, &input_d1, &output_d1, &tag_d1, ndigit, inputBuffer1, outputBuffer1, outTagBuffer1);
 	//mCU* cu2 = trancl.createCU(2, &input_d2, &output_d2, &tag_d2, ndigit);
 	//mCU* cu3 = trancl.createCU(3, &input_d3, &output_d3, &tag_d3, ndigit);
 

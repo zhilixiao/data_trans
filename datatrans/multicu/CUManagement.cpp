@@ -10,7 +10,7 @@ mCU::mCU(int id)
 void mCU::sync()
 {
   	// Wait until the outputs have been read back
-	mEvent[2].wait(); 
+	mEvent[3].wait(); 
 	//clWaitForEvents(1, &mEvent[2]);
 	//clReleaseEvent(mEvent[0]);
    	//clReleaseEvent(mEvent[1]);

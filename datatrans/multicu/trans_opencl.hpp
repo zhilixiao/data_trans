@@ -24,7 +24,7 @@ typedef struct Trans_OpenCL
 	cl::Context ctx;
 	cl::CommandQueue cmd_q;
 	std::vector<cl::Device> devices;
-	cl::Kernel mkernel;
+	cl::Kernel mkernel[2];
     //std::map<std::string, cl::Kernel> str_kernel_map; 
     cl::Program program;
     //cl::Kernel kernel(std::string kernelName);
@@ -38,13 +38,14 @@ typedef struct Trans_OpenCL
 	//destructor
 	~Trans_OpenCL();
 	void GetDevices();
-	void BuildKernel(int version, std::string binary_name, 
+	void ReadBinaries(int version, std::string binary_name, 
 		cl::Program::Binaries& bins);
 	void init(int version, const std::string build_tgt,
 		const std::string kernel_name);
 	void createKernel(std::string kernelName);
 
-	mCU* createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d, cl::Buffer *tag_d, int total);
+	mCU* createCU(int cuID, cl::Buffer *input_d, cl::Buffer *output_d, cl::Buffer *tag_d, int total, 
+					char *inputBuffer, char *outputBuffer, char *outTagBuffer);
 
 
 	

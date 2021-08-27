@@ -5,8 +5,9 @@
 typedef struct  mCU {
 
   std::vector<cl::Event> mEvents;
-  cl::Event mEvent[3];	
+  cl::Event mEvent[4];	
   int      mId;
+
 
   mCU(int id);
 
